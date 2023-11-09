@@ -1,68 +1,129 @@
+from ctypes import alignment
 import customtkinter as tk
-import utils
+from utils import verify_if_user_exists
+import getpass
+from database import UserDatabase
 
-#CRIAR CADA PAGINA EM UMA CLASSE
-#CRIAR VARIAVEL CURRENT_PAGE QUE VAI RECEBER A CLASSE DA PÁGINA ATUAL DE ACORDO COM A NECESSIDADE
-
-janela = tk.CTk()
-janela.geometry("500x500")
-username, password = tk.StringVar(), tk.StringVar()
-
-#Criar função para alterar tema de escuro para claro e vice-versa
 bg = "dark"
 tk.set_appearance_mode(bg)
 
-top_frame = tk.CTkFrame(janela)
-top_frame.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
-top_frame.configure(fg_color=janela.cget("fg_color"))
 
-welcome = tk.CTkLabel(top_frame,
-                      text="Welcome to ChronosApp",
-                      font=("Roboto", 30))
-welcome.pack(padx=10, pady=10)
+class LoginPage(tk.CTk):
 
-username_entry = tk.CTkEntry(top_frame,
-                             placeholder_text="Username",
-                             textvariable=username,
-                             font=("Roboto", 16))
-username_entry.pack(padx=10, pady=5)
+	def __init__(self):
+		super().__init__()
+		self.geometry("500x500")
+		self.grid()
 
-password_entry = tk.CTkEntry(top_frame,
-                             placeholder_text="Password",
-                             textvariable=password,
-                             font=("Roboto", 16),
-                             show="*")
-password_entry.pack(padx=10, pady=5)
+		def Login():
+			db = UserDatabase()
 
-botton_frame = tk.CTkFrame(top_frame)
-botton_frame.pack(pady=7)
-botton_frame.configure(fg_color=janela.cget("fg_color"))
+			username = self.username_entry.get()
+			password = getpass.getpass(self.password_entry.get())
+
+			db.cursor.execute(
+					'SELECT * FROM users WHERE username = ? AND password = ?',
+					(username, password))
+			user_data = db.cursor.fetchone()
+
+			if user_data:
+				sucess_label = tk.CTkLabel(self,
+																 text="User Logged",
+																 font=("Roboto", 14),
+																 text_color="green")
+				sucess_label.grid(row=2, column=1, columnspan=2, sticky="n")
+				return True, username
+			else:
+				sucess_label = tk.CTkLabel(self,
+																 text="Login Failed",
+																 font=("Roboto", 14),
+																 text_color="red")
+				sucess_label.grid(row=2, column=1, columnspan=2, sticky="n")
+				return False
+		def Register():
+			db = UserDatabase()
+
+			username = self.username_entry.get()
+			password = getpass.getpass(self.password_entry.get())
+
+			user_boolean_value = verify_if_user_exists(username)
+			if user_boolean_value is True:
+				fail_label = tk.CTkLabel(self,
+																 text="Register Failed!",
+																 font=("Roboto", 14),
+																 text_color="red")
+				fail_label.grid(row=2, column=1, columnspan=2, sticky="n")
+				return False
+			else:
+				db.register_user(username=username, password=password)
+				sucess_label = tk.CTkLabel(self,
+																	 text="User Registered",
+																	 font=("Roboto", 14),
+																	 text_color="green")
+				sucess_label.grid(row=2, column=1, columnspan=2, sticky="n")
+				return True
+
+		self.rowconfigure(0, weight=1)
+		self.rowconfigure(1, weight=3)
+		self.rowconfigure((2, 3), weight=1)
+		self.rowconfigure(4, weight=5)
+		self.columnconfigure((0, 4), weight=1)
+		self.welcome_text = tk.CTkLabel(self,
+																		text="Welcome to ChronosApp",
+																		font=("Roboto", 30))
+		self.welcome_text.grid(row=1, column=1, columnspan=2, sticky="s", ipady=20)
+
+		self.username_entry = tk.CTkEntry(self,
+																			placeholder_text="Username",
+																			font=("Roboto", 16))
+		self.username_entry.grid(row=2, column=1, columnspan=2, sticky="s", pady=3)
+
+		self.password_entry = tk.CTkEntry(self,
+																			placeholder_text="Password",
+																			font=("Roboto", 16),
+																			show="*")
+		self.password_entry.grid(row=3, column=1, columnspan=2, sticky="n", pady=3)
+
+		self.login_button = tk.CTkButton(self,
+																		 text="Login",
+																		 font=("Roboto", 16),
+																		 command=Login,
+																		 width=100)
+		self.login_button.grid(row=4, column=1, sticky="ne", padx=3)
+
+		self.register_button = tk.CTkButton(self,
+																				text="Register",
+																				font=("Roboto", 16),
+																				command=Register,
+																				width=100)
+		self.register_button.grid(row=4, column=2, sticky="nw", padx=3)
 
 
-#Criar página de registro e adicionar todas as informações no banco de dados!
-def register():
-  _frame = tk.CTkFrame(botton_frame)
-  print(username.get(), password.get())
-  rg = utils.register_user(username.get(), password.get())
-  if rg is True:
-    tk.CTkLabel(_frame,
-                text="User registred!",
-                text_color="green",
-                font=("Roboto", 12)).pack()
+class Tabs(tk.CTkTabview):
+
+	def __init__(self, master):
+		super().__init__(master)
+
+		# create tabs
+		self.add("Taks")
+		self.add("Finances")
+
+		# add widgets on tabs
+		self.label = tk.CTkLabel(master=self.tab("Finances"))
+		self.label.grid(row=0, column=0, padx=20, pady=10)
 
 
-login_button = tk.CTkButton(botton_frame,
-                            text="Login",
-                            font=("Roboto", 16),
-                            width=100)
-login_button.pack(side=tk.LEFT, padx=3)
+class MainPage(tk.CTk):
 
-register_button = tk.CTkButton(botton_frame,
-                               text="Register",
-                               font=("Roboto", 16),
-                               width=100,
-                               command=register)
-register_button.pack(side=tk.LEFT, padx=3)
-#organizar páginas em classes provavelmente!
+	def __init__(self):
+		super().__init__()
 
-janela.mainloop()
+		self.welcome = tk.CTkLabel(self, text="ChronosApp", font=("Roboto", 30))
+		self.welcome.pack(padx=10, pady=10)
+
+		self.tab_view = Tabs(master=self)
+		self.tab_view.pack(padx=5, pady=5)
+
+
+app = LoginPage()
+app.mainloop()
