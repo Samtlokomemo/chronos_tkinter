@@ -12,26 +12,32 @@ def verify_if_user_exists(username):
     return 0
 
 
-def register_user(username, password):
+def register_user():
   db = UserDatabase()
+
+  print("\nRegister Area")
+  print(len("Register Area") * "_")
+
+  username = input("Type the username you would like to use: ")
+  password = getpass.getpass("Enter your password: ")
 
   user_boolean_value = verify_if_user_exists(username)
 
-  if user_boolean_value is True:
-    print("Register Failed")
+  if user_boolean_value == True:
     return False
   else:
     db.register_user(username=username, password=password)
-    print("User registred")
-    print(f"User: {username}\nPassword: {password}")
     return True
 
 
-def user_login(username, password):
+def user_login():
   db = UserDatabase()
 
   print("\nLogin Area")
   print(len("Login Area") * "_")
+
+  username = input("Type your username: ")
+  password = getpass.getpass("Type your password: ")
 
   db.cursor.execute('SELECT * FROM users WHERE username = ? AND password = ?',
                     (username, password))
@@ -118,7 +124,7 @@ def display_finances():
 4 - Remove Expense
 5 - Edit Expense
 6 - Back
-
+ 
 """)
 
     if choice not in ["1", "2", "3", "4", "5", "6"]:
